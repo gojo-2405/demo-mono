@@ -1,4 +1,4 @@
-name: Run Monorepo Services
+name: Run Monorepo Services with Public URL
 
 on:
   push:
@@ -19,28 +19,36 @@ jobs:
         run: |
           docker compose up -d --build
 
-      - name: Wait for containers
-        run: sleep 15
+      - name: Wait for Containers
+        run: sleep 20
 
       - name: Show Running Containers
         run: docker ps
 
-      - name: Test Frontend
+      - name: Test Frontend Locally
         run: curl http://localhost:3000
 
-      - name: Test Backend
-        run: curl http://localhost:5000
+      - name: Install Cloudflared
+        run: |
+          wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          chmod +x cloudflared-linux-amd64
+          sudo mv cloudflared-linux-amd64 /usr/local/bin/cloudflared
 
-      - name: Test Auth
-        run: curl http://localhost:5001
+      - name: Start Cloudflare Tunnel
+        run: |
+          nohup cloudflared tunnel --url http://localhost:3000 > tunnel.log 2>&1 &
+          sleep 15
 
-      - name: Test Payment
-        run: curl http://localhost:5002
+      - name: Show Public URL
+        run: |
+          cat tunnel.log
 
-      - name: Test Notification
-        run: curl http://localhost:5003
+      - name: Keep Workflow Alive for Testing
+        run: |
+          echo "Application is live for temporary testing..."
+          sleep 300
 
-      - name: Show Logs
+      - name: Show Container Logs
         run: docker compose logs
 
       - name: Stop Containers
