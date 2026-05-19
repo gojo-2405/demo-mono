@@ -1,4 +1,4 @@
-name: Run Monorepo Services with Public URL
+name: Run All Services Publicly
 
 on:
   push:
@@ -25,31 +25,83 @@ jobs:
       - name: Show Running Containers
         run: docker ps
 
-      - name: Test Frontend Locally
-        run: curl http://localhost:3000
-
       - name: Install Cloudflared
         run: |
           wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
           chmod +x cloudflared-linux-amd64
           sudo mv cloudflared-linux-amd64 /usr/local/bin/cloudflared
 
-      - name: Start Cloudflare Tunnel
+      # Frontend Tunnel
+      - name: Start Frontend Tunnel
         run: |
-          nohup cloudflared tunnel --url http://localhost:3000 > tunnel.log 2>&1 &
-          sleep 15
+          nohup cloudflared tunnel --url http://localhost:3000 > frontend.log 2>&1 &
+          sleep 10
 
-      - name: Show Public URL
+      # Backend Tunnel
+      - name: Start Backend Tunnel
         run: |
-          cat tunnel.log
+          nohup cloudflared tunnel --url http://localhost:5000 > backend.log 2>&1 &
+          sleep 10
 
-      - name: Keep Workflow Alive for Testing
+      # Auth Tunnel
+      - name: Start Auth Tunnel
         run: |
-          echo "Application is live for temporary testing..."
-          sleep 300
+          nohup cloudflared tunnel --url http://localhost:5001 > auth.log 2>&1 &
+          sleep 10
 
-      - name: Show Container Logs
+      # Payment Tunnel
+      - name: Start Payment Tunnel
+        run: |
+          nohup cloudflared tunnel --url http://localhost:5002 > payment.log 2>&1 &
+          sleep 10
+
+      # Notification Tunnel
+      - name: Start Notification Tunnel
+        run: |
+          nohup cloudflared tunnel --url http://localhost:5003 > notification.log 2>&1 &
+          sleep 10
+
+      - name: Show Public URLs
+        run: |
+          echo "================ FRONTEND ================"
+          cat frontend.log
+
+          echo "================ BACKEND ================"
+          cat backend.log
+
+          echo "================ AUTH ==================="
+          cat auth.log
+
+          echo "================ PAYMENT ================"
+          cat payment.log
+
+          echo "================ NOTIFICATION ==========="
+          cat notification.log
+
+      - name: Test All Services
+        run: |
+          echo "Frontend:"
+          curl http://localhost:3000
+
+          echo "Backend:"
+          curl http://localhost:5000
+
+          echo "Auth:"
+          curl http://localhost:5001
+
+          echo "Payment:"
+          curl http://localhost:5002
+
+          echo "Notification:"
+          curl http://localhost:5003
+
+      - name: Show Docker Logs
         run: docker compose logs
+
+      - name: Keep Workflow Alive
+        run: |
+          echo "All services are temporarily live..."
+          sleep 600
 
       - name: Stop Containers
         if: always()
