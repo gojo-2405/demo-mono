@@ -1,0 +1,25 @@
+services:
+  frontend:
+    build: ./services/frontend
+    ports:
+      - "3000:3000"
+
+  backend:
+    build: ./services/backend
+    ports:
+      - "5000:5000"
+
+  auth:
+    build: ./services/auth
+    ports:
+      - "5001:5001"
+
+  payment:
+    build: ./services/payment
+    ports:
+      - "5002:5002"
+
+  notification:
+    build: ./services/notification
+    ports:
+      - "5003:5003"
