@@ -1,0 +1,48 @@
+name: Run Monorepo Services
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  run-services:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build and Start Containers
+        run: |
+          docker compose up -d --build
+
+      - name: Wait for containers
+        run: sleep 15
+
+      - name: Show Running Containers
+        run: docker ps
+
+      - name: Test Frontend
+        run: curl http://localhost:3000
+
+      - name: Test Backend
+        run: curl http://localhost:5000
+
+      - name: Test Auth
+        run: curl http://localhost:5001
+
+      - name: Test Payment
+        run: curl http://localhost:5002
+
+      - name: Test Notification
+        run: curl http://localhost:5003
+
+      - name: Show Logs
+        run: docker compose logs
+
+      - name: Stop Containers
+        if: always()
+        run: docker compose down
